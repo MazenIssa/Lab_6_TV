@@ -1,10 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.Lab_6" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Base.Theme.AndroidLabs" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
     </style>
 
-    <style name="Theme.Lab_6" parent="Base.Theme.Lab_6">
+    <style name="Theme.AndroidLabs" parent="Base.Theme.AndroidLabs">
         <item name="android:windowBackground">@android:color/black</item>
     </style>
 </resources>

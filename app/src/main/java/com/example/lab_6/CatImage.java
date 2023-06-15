@@ -18,7 +18,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Random;
 
-public class CatImage extends AsyncTask<Void, Integer, Bitmap> {
+public class CatImage extends AsyncTask<String, Integer, String> {
 
     @SuppressLint("StaticFieldLeak")
     private final ImageView imageView;
@@ -32,7 +32,7 @@ public class CatImage extends AsyncTask<Void, Integer, Bitmap> {
     }
 
     @Override
-    protected Bitmap doInBackground(Void... voids) {
+    protected String doInBackground(String... strings) {
         Random random = new Random();
 
         while (true) {
@@ -46,36 +46,37 @@ public class CatImage extends AsyncTask<Void, Integer, Bitmap> {
                     InputStream inputStream = connection.getInputStream();
                     String response = convertStreamToString(inputStream);
 
-                    assert response != null;
-                    JSONObject jsonObject = new JSONObject(response);
-                    String id = jsonObject.getString("id");
-                    String urlStr = jsonObject.getString("url");
+                    if (response != null) {
+                        JSONObject jsonObject = new JSONObject(response);
+                        String id = jsonObject.getString("id");
+                        String urlStr = jsonObject.getString("url");
 
-                    // Check if an image file with the "id" exists locally
-                    String imageFilePath = getImageFilePath(id);
-                    if (imageFileExists(imageFilePath)) {
-                        return loadBitmapFromFile(imageFilePath);
-                    } else {
-                        Bitmap bitmap = downloadImage(urlStr);
-                        assert bitmap != null;
-                        saveBitmapToFile(bitmap, imageFilePath);
-                        currentCatPicture = bitmap; // Store the current picture for updating ImageView
-                        publishProgress(); // Trigger onProgressUpdate to update ImageView
-                        return bitmap;
+                        // Check if an image file with the "id" exists locally
+                        String imageFilePath = getImageFilePath(id);
+                        if (imageFileExists(imageFilePath)) {
+                            return imageFilePath;
+                        } else {
+                            Bitmap bitmap = downloadImage(urlStr);
+                            if (bitmap != null) {
+                                saveBitmapToFile(bitmap, imageFilePath);
+                                currentCatPicture = bitmap; // Store the current picture for updating ImageView
+                                publishProgress(); // Trigger onProgressUpdate to update ImageView
+                            }
+                        }
+                    }
+                }
+
+                // Sleep for a while to give the user time to appreciate the current picture
+                for (int i = 0; i < 100; i++) {
+                    try {
+                        publishProgress(i);
+                        Thread.sleep(30);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
-            }
-
-            // Sleep for a while to give the user time to appreciate the current picture
-            for (int i = 0; i < 100; i++) {
-                try {
-                    publishProgress(i);
-                    Thread.sleep(30);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
         }
     }
@@ -87,14 +88,21 @@ public class CatImage extends AsyncTask<Void, Integer, Bitmap> {
         progressBar.setProgress(values[0]);
 
         // If a new cat picture has been selected, update the ImageView with the new picture
-        imageView.setImageBitmap(currentCatPicture);
+        if (currentCatPicture != null) {
+            imageView.setImageBitmap(currentCatPicture);
+        }
     }
 
     @Override
-    protected void onPostExecute(Bitmap bitmap) {
-        super.onPostExecute(bitmap);
+    protected void onPostExecute(String imageFilePath) {
+        super.onPostExecute(imageFilePath);
         // Update the ImageView with the final downloaded bitmap
-        imageView.setImageBitmap(bitmap);
+        if (imageFilePath != null) {
+            Bitmap bitmap = loadBitmapFromFile(imageFilePath);
+            if (bitmap != null) {
+                imageView.setImageBitmap(bitmap);
+            }
+        }
     }
 
     private Bitmap downloadImage(String imageUrl) {
